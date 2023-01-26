@@ -3,11 +3,11 @@ from datetime import datetime
 import serial
 
 
-def read_from_serial_port(port):
+def read_from_serial_port(port, baudrate, system, **kwargs):
     # configure the serial connections (the parameters differs on the device you are connecting to)
     ser = serial.Serial(
         port=port,
-        baudrate=38400,
+        baudrate=baudrate,
         parity=serial.PARITY_ODD,
         stopbits=serial.STOPBITS_TWO,
         bytesize=serial.SEVENBITS
@@ -17,7 +17,10 @@ def read_from_serial_port(port):
 
     print('Enter your commands below.\r\nInsert "exit" to leave the application.')
 
-    filename = f'data/{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}.txt'
+    if system=='LINUX':
+        filename = f'data/{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
+    else:
+        filename = f'data\{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
     print(f'Saving to file {filename}')
     with open(filename, 'w') as file:
         while True:
@@ -28,11 +31,17 @@ def read_from_serial_port(port):
                 out += ser.read(1).decode("utf-8")
 
             if out != '':
-                #print(">>" + out)
-                file.write(">>" + out)
+                file.write(out)
 
 
 if __name__ == '__main__':
-    read_from_serial_port('/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066CFF575353898667173738-if02')
+    baudrate = 9600 #38400
+
+    # Linux
+    #read_from_serial_port('/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066CFF575353898667173738-if02', baudrate, system='LINUX')
+    #read_from_serial_port('/dev/pts/3', baudrate=9600, rtscts=True, dsrdtr=True)
+
+    # Windows
+    read_from_serial_port('COM7', baudrate, system='WINDOWS')
 
 
