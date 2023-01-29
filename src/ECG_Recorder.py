@@ -4,10 +4,14 @@ import pyqtgraph as pg
 import sys
 from datetime import datetime
 from enum import auto, Enum
+from pathlib import Path
 
 from port_handler import read_from_serial_port, write_data_point_to_file
 from gui.ECG_Recorder_ui import Ui_MainWindow
 
+def create_default_filename():
+    _data_folder = Path('../data/')
+    return _data_folder/f'{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
 
 class System(Enum):
     LINUX = auto()
@@ -16,16 +20,14 @@ class System(Enum):
 class Configuration:
     system = System.WINDOWS
     baudrate = 9600 #38400 #9600
+    #filename = None
     if system == System.LINUX:
-        filename = f'../data/{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
         port = '/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066CFF575353898667173738-if02'
         #port = '/dev/pts/3'
     elif system == System.WINDOWS:
-        filename = f'..\data\{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
         port = 'COM7'
     else:
         raise Exception("You didn't choose right system. Choose LINUX or WINDOWS.")
-
 
 class PortMonitor(QObject):
 
@@ -44,17 +46,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
-        ui = Ui_MainWindow()
-        ui.setupUi(self)
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        self.setActions()
 
-        self.graphWidget = pg.PlotWidget(ui.centralwidget)
+        self.graphWidget = pg.PlotWidget(self.ui.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.graphWidget.sizePolicy().hasHeightForWidth())
         self.graphWidget.setSizePolicy(sizePolicy)
         self.graphWidget.setObjectName("graphWidget")
-        ui.verticalLayout_2.addWidget(self.graphWidget)
+        self.ui.verticalLayout_2.addWidget(self.graphWidget)
 
         self.x = [0]
         self.y = [0]
@@ -65,7 +68,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.data_line = self.graphWidget.plot(self.x, self.y, pen=pen)
 
         self.file = None
-        self.open_file()
+        self.user_filename = None
+        self.filename = None
+        self.recording = False
 
         self.port_monitor = PortMonitor()
         self.thread = QtCore.QThread(self)
@@ -74,14 +79,35 @@ class MainWindow(QtWidgets.QMainWindow):
         self.thread.started.connect(self.port_monitor.monitor_port)
         self.thread.start()
 
+    def setActions(self):
+        self.ui.pushButton_recording.clicked.connect(self.startStopRecording)
+
+    def startStopRecording(self):
+        _translate = QtCore.QCoreApplication.translate
+        if not self.recording:
+            self.open_file()
+            self.ui.pushButton_recording.setText(_translate("MainWindow", "Stop Recording"))
+            self.ui.statusbar.showMessage(f'Saving data to file {self.filename}')
+            self.recording = True
+        else:
+            self.close_file()
+            self.ui.pushButton_recording.setText(_translate("MainWindow", "Start Recording"))
+            self.ui.statusbar.showMessage(f'Data saved in {self.filename}', 5000)
+            self.recording = False
+
     def open_file(self):
         if self.file is None:
-            self.file = open(Configuration.filename, 'w')
-            print(f'Saving data to file {Configuration.filename}')
+            if self.user_filename is None:
+                self.filename = create_default_filename()
+            else:
+                self.filename = self.user_filename
+            self.file = open(self.filename, 'w')
+            print(f'Saving data to file {self.filename}')
 
     def close_file(self):
         if self.file is not None:
             self.file.close()
+            print(f'Data saved in {self.filename}')
             self.file = None
 
     def closeEvent(self, event):
