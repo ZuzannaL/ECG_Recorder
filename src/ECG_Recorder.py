@@ -1,14 +1,11 @@
-#https://stackoverflow.com/questions/37252756/simplest-way-for-pyqt-threading
-#https://stackoverflow.com/questions/16243752/serial-port-does-not-work-in-rewritten-python-code
-
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QObject
 import pyqtgraph as pg
 import sys
 from datetime import datetime
-from enum import Enum
+from enum import auto, Enum
 
-from main import read_from_serial_port
+from port_handler import read_from_serial_port
 from gui.ECG_Recorder_ui import Ui_MainWindow
 
 
@@ -19,8 +16,8 @@ def write_to_file(x, file):
         file.write(out)
 
 class System(Enum):
-    LINUX = 'LINUX'
-    WINDOWS = 'WINDOWS'
+    LINUX = auto()
+    WINDOWS = auto()
 
 class Configuration:
     system = System.WINDOWS
@@ -109,9 +106,11 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.file is not None:
             write_to_file(data_point, self.file)
 
+def run():
+    app = QtWidgets.QApplication(sys.argv)
+    w = MainWindow()
+    w.show()
+    sys.exit(app.exec_())
 
-
-app = QtWidgets.QApplication(sys.argv)
-w = MainWindow()
-w.show()
-sys.exit(app.exec_())
+if __name__ == "__main__":
+	run()

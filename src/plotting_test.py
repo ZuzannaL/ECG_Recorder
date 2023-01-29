@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets, QtCore
 import pyqtgraph as pg
 import sys  # We need sys so that we can pass argv to QApplication
 from random import randint
-from main import read_from_serial_port
+from port_handler import read_from_serial_port
 
 class MainWindow(QtWidgets.QMainWindow):
 

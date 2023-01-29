@@ -1,11 +1,11 @@
 from datetime import datetime
 import serial
-from enum import Enum
+from enum import auto, Enum
 import time
 
 class System(Enum):
-    LINUX = 'LINUX'
-    WINDOWS = 'WINDOWS'
+    LINUX = auto()
+    WINDOWS = auto()
 
 def read_from_serial_port(port, baudrate, **kwargs):
     # configure the serial connections (the parameters differs on the device you are connecting to)
