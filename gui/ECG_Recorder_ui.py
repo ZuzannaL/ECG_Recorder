@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(633, 433)
+        MainWindow.resize(711, 433)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -74,14 +74,6 @@ class Ui_MainWindow(object):
         self.lcdNumber_HR.setObjectName("lcdNumber_HR")
         self.horizontalLayout.addWidget(self.lcdNumber_HR)
         self.verticalLayout_2.addLayout(self.horizontalLayout)
-        # self.plot = QtWidgets.QGraphicsView(self.centralwidget)
-        # sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
-        # sizePolicy.setHorizontalStretch(0)
-        # sizePolicy.setVerticalStretch(0)
-        # sizePolicy.setHeightForWidth(self.plot.sizePolicy().hasHeightForWidth())
-        # self.plot.setSizePolicy(sizePolicy)
-        # self.plot.setObjectName("plot")
-        # self.verticalLayout_2.addWidget(self.plot)
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")

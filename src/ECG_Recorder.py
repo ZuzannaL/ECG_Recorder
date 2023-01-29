@@ -45,9 +45,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
+        _translate = QtCore.QCoreApplication.translate
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.ui.comboBox_baudrate.setCurrentText(_translate("MainWindow", "9600"))
         self.setActions()
 
         self.graphWidget = pg.PlotWidget(self.ui.centralwidget)
