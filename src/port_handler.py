@@ -33,7 +33,7 @@ def read_from_serial_port(port, baudrate, **kwargs):
                 else:
                     continue
 
-def write_to_file(filename, port, baudrate):
+def write_all_data_to_file(filename, port, baudrate):
     print(f'Saving to file {filename}')
     with open(filename, 'w') as file:
         for x in read_from_serial_port(port, baudrate):
@@ -42,20 +42,27 @@ def write_to_file(filename, port, baudrate):
             if out != '':
                 file.write(out)
 
+def write_data_point_to_file(x, file):
+    out = ''
+    out += str(x)+'\n'
+    if out != '':
+        file.write(out)
+
+
 if __name__ == '__main__':
     baudrate = 9600 #38400
     system = System.WINDOWS
 
     if system==System.LINUX:
-        filename = f'data/{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
+        filename = f'../data/{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
         port = '/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066CFF575353898667173738-if02'
         #port = '/dev/pts/3'
     elif system==System.WINDOWS:
-        filename = f'data\{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
+        filename = f'..\data\{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
         port = 'COM7'
     else:
         raise Exception("You didn't choose write system. Choose LINUX or WINDOWS.")
 
-    write_to_file(filename, port, baudrate)
+    write_all_data_to_file(filename, port, baudrate)
 
 

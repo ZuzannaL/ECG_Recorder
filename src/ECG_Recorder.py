@@ -5,15 +5,9 @@ import sys
 from datetime import datetime
 from enum import auto, Enum
 
-from port_handler import read_from_serial_port
+from port_handler import read_from_serial_port, write_data_point_to_file
 from gui.ECG_Recorder_ui import Ui_MainWindow
 
-
-def write_to_file(x, file):
-    out = ''
-    out += str(x)+'\n'
-    if out != '':
-        file.write(out)
 
 class System(Enum):
     LINUX = auto()
@@ -31,7 +25,6 @@ class Configuration:
         port = 'COM7'
     else:
         raise Exception("You didn't choose right system. Choose LINUX or WINDOWS.")
-
 
 
 class PortMonitor(QObject):
@@ -104,7 +97,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.data_line.setData(self.x, self.y)  # Update the data
 
         if self.file is not None:
-            write_to_file(data_point, self.file)
+            write_data_point_to_file(data_point, self.file)
 
 def run():
     app = QtWidgets.QApplication(sys.argv)
