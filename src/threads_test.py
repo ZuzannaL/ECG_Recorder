@@ -9,6 +9,7 @@ from datetime import datetime
 from enum import Enum
 
 from main import read_from_serial_port
+from gui.ECG_Recorder_ui import Ui_MainWindow
 
 
 def write_to_file(x, file):
@@ -53,8 +54,17 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
-        self.graphWidget = pg.PlotWidget()
-        self.setCentralWidget(self.graphWidget)
+        ui = Ui_MainWindow()
+        ui.setupUi(self)
+
+        self.graphWidget = pg.PlotWidget(ui.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.graphWidget.sizePolicy().hasHeightForWidth())
+        self.graphWidget.setSizePolicy(sizePolicy)
+        self.graphWidget.setObjectName("graphWidget")
+        ui.verticalLayout_2.addWidget(self.graphWidget)
 
         self.x = [0]
         self.y = [0]
