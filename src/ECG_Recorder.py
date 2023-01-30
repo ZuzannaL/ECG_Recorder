@@ -3,31 +3,19 @@ from PyQt5.QtCore import QObject
 import pyqtgraph as pg
 import sys
 from datetime import datetime
-from enum import auto, Enum
 from pathlib import Path
+import serial
 
-from port_handler import read_from_serial_port, write_data_point_to_file
+from port_handler import read_from_serial_port, write_data_point_to_file, find_available_ports
 from gui.ECG_Recorder_ui import Ui_MainWindow
 
 def create_default_filename():
     _data_folder = Path('../data/')
     return _data_folder/f'{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
 
-class System(Enum):
-    LINUX = auto()
-    WINDOWS = auto()
-
 class Configuration:
-    system = System.WINDOWS
     baudrate = 9600 #38400 #9600
-    #filename = None
-    if system == System.LINUX:
-        port = '/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_066CFF575353898667173738-if02'
-        #port = '/dev/pts/3'
-    elif system == System.WINDOWS:
-        port = 'COM7'
-    else:
-        raise Exception("You didn't choose right system. Choose LINUX or WINDOWS.")
+    port = None
 
 class PortMonitor(QObject):
 
@@ -35,23 +23,47 @@ class PortMonitor(QObject):
 
     @QtCore.pyqtSlot()
     def monitor_port(self):
-        baudrate = Configuration.baudrate
-        port = Configuration.port
-        for x in read_from_serial_port(port, baudrate):
-            self.image_signal.emit(x)
+        while True:
+            try:
+                baudrate = Configuration.baudrate
+                port = Configuration.port
+                for x in read_from_serial_port(port, baudrate):
+                    self.image_signal.emit(x)
+                    if (baudrate, port) != (Configuration.baudrate, Configuration.port):
+                        break
+            except serial.serialutil.SerialException as e:
+                print(e)
 
 
 class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
-        _translate = QtCore.QCoreApplication.translate
+        self._translate = QtCore.QCoreApplication.translate
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.comboBox_baudrate.setCurrentText(_translate("MainWindow", "9600"))
+        self.ui.comboBox_baudrate.setCurrentText(self._translate("MainWindow", "9600"))
+        self.setupGraphWidget()
+
+        self.file = None
+        self.user_filename = None
+        self.filename = None
+        self.recording = False
+        self.ports = find_available_ports()
+
+        self.updatePortsList()
+        Configuration.port = self.ports[0]
         self.setActions()
 
+        self.port_monitor = PortMonitor()
+        self.thread = QtCore.QThread(self)
+        self.port_monitor.image_signal.connect(self.update_data)
+        self.port_monitor.moveToThread(self.thread)
+        self.thread.started.connect(self.port_monitor.monitor_port)
+        self.thread.start()
+
+    def setupGraphWidget(self):
         self.graphWidget = pg.PlotWidget(self.ui.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
@@ -69,33 +81,32 @@ class MainWindow(QtWidgets.QMainWindow):
         pen = pg.mkPen(color=(0, 0, 255), width=1) #todo: it gives an error when width!=1 even though the plot looks ok
         self.data_line = self.graphWidget.plot(self.x, self.y, pen=pen)
 
-        self.file = None
-        self.user_filename = None
-        self.filename = None
-        self.recording = False
-
-        self.port_monitor = PortMonitor()
-        self.thread = QtCore.QThread(self)
-        self.port_monitor.image_signal.connect(self.update_data)
-        self.port_monitor.moveToThread(self.thread)
-        self.thread.started.connect(self.port_monitor.monitor_port)
-        self.thread.start()
+    def updatePortsList(self):
+        for i in range(len(self.ports)):
+            self.ui.comboBox_port.addItem("")
+        for i, port in enumerate(self.ports):
+            self.ui.comboBox_port.setItemText(i, self._translate("MainWindow", port))
 
     def setActions(self):
         self.ui.pushButton_recording.clicked.connect(self.startStopRecording)
+        self.ui.comboBox_port.activated.connect(self.choosePort)
 
     def startStopRecording(self):
-        _translate = QtCore.QCoreApplication.translate
         if not self.recording:
             self.open_file()
-            self.ui.pushButton_recording.setText(_translate("MainWindow", "Stop Recording"))
+            self.ui.pushButton_recording.setText(self._translate("MainWindow", "Stop Recording"))
             self.ui.statusbar.showMessage(f'Saving data to file {self.filename}')
             self.recording = True
         else:
             self.close_file()
-            self.ui.pushButton_recording.setText(_translate("MainWindow", "Start Recording"))
+            self.ui.pushButton_recording.setText(self._translate("MainWindow", "Start Recording"))
             self.ui.statusbar.showMessage(f'Data saved in {self.filename}', 5000)
             self.recording = False
+
+    def choosePort(self):
+        for port in self.ports:
+            if self.ui.comboBox_port.currentText() == port:
+                Configuration.port = port
 
     def open_file(self):
         if self.file is None:

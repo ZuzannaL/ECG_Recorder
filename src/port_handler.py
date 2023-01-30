@@ -1,11 +1,11 @@
 from datetime import datetime
-import serial
-from enum import auto, Enum
 import time
+import serial
+from serial.tools.list_ports import comports
 
-class System(Enum):
-    LINUX = auto()
-    WINDOWS = auto()
+
+def find_available_ports():
+    return [port.name for port in comports()]
 
 def read_from_serial_port(port, baudrate, **kwargs):
     # configure the serial connections (the parameters differs on the device you are connecting to)
@@ -50,6 +50,12 @@ def write_data_point_to_file(x, file):
 
 
 if __name__ == '__main__':
+    from enum import auto, Enum
+
+    class System(Enum):
+        LINUX = auto()
+        WINDOWS = auto()
+
     baudrate = 9600 #38400
     system = System.WINDOWS
 
