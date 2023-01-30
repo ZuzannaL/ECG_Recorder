@@ -90,23 +90,36 @@ class MainWindow(QtWidgets.QMainWindow):
     def setActions(self):
         self.ui.pushButton_recording.clicked.connect(self.startStopRecording)
         self.ui.comboBox_port.activated.connect(self.choosePort)
+        self.ui.comboBox_baudrate.activated.connect(self.chooseBaudrate)
 
     def startStopRecording(self):
         if not self.recording:
             self.open_file()
             self.ui.pushButton_recording.setText(self._translate("MainWindow", "Stop Recording"))
             self.ui.statusbar.showMessage(f'Saving data to file {self.filename}')
+            print(f'Saving data to file {self.filename}')
             self.recording = True
         else:
             self.close_file()
             self.ui.pushButton_recording.setText(self._translate("MainWindow", "Start Recording"))
             self.ui.statusbar.showMessage(f'Data saved in {self.filename}', 5000)
+            print(f'Data saved in {self.filename}')
             self.recording = False
 
     def choosePort(self):
         for port in self.ports:
             if self.ui.comboBox_port.currentText() == port:
                 Configuration.port = port
+                self.ui.statusbar.showMessage(f'Setting port to {port}', 5000)
+                print(f'Setting port to {port}')
+
+    def chooseBaudrate(self):
+        all_baudrates = [self.ui.comboBox_baudrate.itemText(i) for i in range(self.ui.comboBox_baudrate.count())]
+        for baudrate in all_baudrates:
+            if self.ui.comboBox_baudrate.currentText() == baudrate:
+                Configuration.baudrate = int(baudrate)
+                self.ui.statusbar.showMessage(f'Setting baudrate to {baudrate}', 5000)
+                print(f'Setting baudrate to {baudrate}')
 
     def open_file(self):
         if self.file is None:
@@ -115,12 +128,10 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.filename = self.user_filename
             self.file = open(self.filename, 'w')
-            print(f'Saving data to file {self.filename}')
 
     def close_file(self):
         if self.file is not None:
             self.file.close()
-            print(f'Data saved in {self.filename}')
             self.file = None
 
     def closeEvent(self, event):
