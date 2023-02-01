@@ -14,7 +14,7 @@ def create_default_filename():
     return _data_folder/f'{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
 
 class Configuration:
-    baudrate = 9600 #38400 #9600
+    baudrate = 38400 #38400 #9600
     port = None
 
 class PortMonitor(QObject):
@@ -43,7 +43,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.comboBox_baudrate.setCurrentText(self._translate("MainWindow", "9600"))
+        self.ui.comboBox_baudrate.setCurrentText(self._translate("MainWindow", str(Configuration.baudrate)))
         self.setupGraphWidget()
 
         self.file = None
@@ -145,7 +145,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def update_data(self, data_point):
-        if len(self.x) == 100:
+        if len(self.x) == 200:
             self.x = self.x[1:]  # Remove the first x element
             self.y = self.y[1:]  # Remove the first y element
         self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last
