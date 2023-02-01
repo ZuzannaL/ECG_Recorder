@@ -91,7 +91,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_recording.clicked.connect(self.startStopRecording)
         self.ui.comboBox_port.activated.connect(self.choosePort)
         self.ui.comboBox_baudrate.activated.connect(self.chooseBaudrate)
-        self.ui.lineEdit_filename.editingFinished.connect(self.choose_filename)
+        self.ui.lineEdit_filename.editingFinished.connect(self.chooseFilename)
 
     def startStopRecording(self):
         if not self.recording:
@@ -122,7 +122,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.statusbar.showMessage(f'Setting baudrate to {baudrate}', 5000)
                 print(f'Setting baudrate to {baudrate}')
 
-    def choose_filename(self):
+    def chooseFilename(self):
         self.user_filename = self.ui.lineEdit_filename.text()
         self.ui.statusbar.showMessage(f'Setting filename to {self.user_filename}', 5000)
         print(f'Setting filename to {self.user_filename}')
