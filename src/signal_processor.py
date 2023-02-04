@@ -34,7 +34,7 @@ class SignalProcessor:
         y, self.lowpass_zi = ss.lfilter(b, a, [x], zi=self.lowpass_zi) #x
         return y[0] #y
 
-    def filter_real_time(self, data_point):
+    def filter_in_real_time(self, data_point):
         data_point = self.filter_highpass(data_point)
         data_point = self.filter_bandstop(data_point)
         data_point = self.filter_lowpass(data_point)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     sp = SignalProcessor(Fs)
     s_filtered2 = []
     for x in s:
-        s_filtered2.append(sp.filter_real_time(x))
+        s_filtered2.append(sp.filter_in_real_time(x))
     s_filtered2 = np.array(s_filtered2)
 
     plt.figure()
