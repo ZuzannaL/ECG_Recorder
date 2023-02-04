@@ -7,6 +7,7 @@ from pathlib import Path
 import serial
 
 from port_handler import read_from_serial_port, write_data_point_to_file, find_available_ports
+from signal_processor import SignalProcessor
 from gui.ECG_Recorder_ui import Ui_MainWindow
 
 def create_default_filename():
@@ -16,6 +17,8 @@ def create_default_filename():
 class Configuration:
     baudrate = 38400 #38400 #9600
     port = None
+    Fs = 200
+    data_points_number_in_the_plot = 600
 
 class PortMonitor(QObject):
 
@@ -51,6 +54,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.filename = None
         self.recording = False
         self.ports = find_available_ports()
+        self.sp = SignalProcessor(Configuration.Fs)
 
         self.updatePortsList()
         Configuration.port = self.ports[0]
@@ -145,15 +149,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def update_data(self, data_point):
-        if len(self.x) == 200:
+        filtered_data_point = self.sp.filter_real_time(data_point)
+
+        if len(self.x) == Configuration.data_points_number_in_the_plot:
             self.x = self.x[1:]  # Remove the first x element
             self.y = self.y[1:]  # Remove the first y element
         self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last
-        self.y.append(data_point)  # Add a new value
+        self.y.append(filtered_data_point)  # Add a new value
         self.data_line.setData(self.x, self.y)  # Update the data
 
         if self.file is not None:
-            write_data_point_to_file(data_point, self.file)
+            write_data_point_to_file(filtered_data_point, self.file)
 
 def run():
     app = QtWidgets.QApplication(sys.argv)
