@@ -154,7 +154,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if len(self.x) == Configuration.data_points_number_in_the_plot:
             self.x = self.x[1:]  # Remove the first x element
             self.y = self.y[1:]  # Remove the first y element
-        self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last
+        # self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last - x-axis in numbers of samples
+        self.x.append(self.x[-1] + 1/Configuration.Fs)  # Add a new value 1/Fs higher than the last - x-axis in seconds
         self.y.append(filtered_data_point)  # Add a new value
         self.data_line.setData(self.x, self.y)  # Update the data
 

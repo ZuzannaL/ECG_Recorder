@@ -1,5 +1,4 @@
 from datetime import datetime
-import time
 import serial
 from serial.tools.list_ports import comports
 
@@ -18,10 +17,8 @@ def read_from_serial_port(port, baudrate, **kwargs):
     )
     ser.isOpen()
 
+    value = ''
     while True:
-        # let's wait one second before reading output (let's give device time to answer)
-        time.sleep(1) #todo: why it is needed
-        value = ''
         while ser.inWaiting() > 0:
             x = ser.read(1).decode("utf-8")
             if x.isdigit():
