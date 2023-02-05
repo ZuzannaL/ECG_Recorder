@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as ss
 from enum import auto, Enum
+import heartpy as hp
 
 NUMBER_OF_SEC_IN_ONE_MIN = 60
 
@@ -42,6 +43,13 @@ class SignalProcessor:
         distances = np.diff(peaks_indices)
         average_distance = np.mean(distances)
         return '{:.0f}'.format(self.Fs * NUMBER_OF_SEC_IN_ONE_MIN / average_distance)
+
+    def make_ecg_analysis(self, s):
+        try:
+            working_data, measures = hp.process(s, self.Fs, report_time=False)
+            return working_data, measures
+        except hp.exceptions.BadSignalWarning:
+            return None, None
 
 def read_from_file(filename):
     with open(filename) as f:
@@ -93,11 +101,24 @@ if __name__ == '__main__':
     # filename = r'..\data\2023-02-01_155235.txt' # OK
     # filename = r'..\data\2023-02-01_155325.txt' # MEH
     # filename = r'..\data\2023-02-01_155402.txt' # BAD
-    # filename = r'..\data\2023-02-01_155958.txt' # MEH - MY ECG
-    filename = r'..\data\2023-02-04_194943.txt'
+    filename = r'..\data\2023-02-01_155958.txt' # MEH - MY ECG
+
+    # filename = r'..\data\2023-02-04_193616.txt'
+    # filename = r'..\data\2023-02-04_194228.txt'
+    # filename = r'..\data\2023-02-04_194943.txt'
+    # filename = r'..\data\2023-02-05_034912.txt'
+    # filename = r'..\data\2023-02-05_035049.txt'
+
 
     s = read_from_file(filename)
     Fs = 200
+
+    working_data, measures = hp.process(s, Fs, report_time=True)
+    # print(measures['bpm'])  # returns BPM value
+    # print(measures['rmssd'])  # returns RMSSD HRV measure
+    for x in measures.items():
+        print(x)
+
     print(s)
     s_filtered = filter_signal_offline(s, Fs)
 

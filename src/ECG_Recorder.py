@@ -5,6 +5,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 import serial
+import numpy as np
 
 from port_handler import read_from_serial_port, write_data_point_to_file, find_available_ports
 from signal_processor import SignalProcessor
@@ -19,7 +20,7 @@ class Configuration:
     port = None
     Fs = 200
     data_points_number_in_the_plot = 3*Fs
-    data_points_number_in_the_buffer = 5*Fs
+    data_points_number_in_the_buffer = 10*Fs
     filtering = False
 
 class PortMonitor(QObject):
@@ -58,6 +59,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ports = find_available_ports()
         self.sp = SignalProcessor(Configuration.Fs)
         self.buffer = [0]
+        self.neverending_buffer = [0]
 
         self.updatePortsList()
         Configuration.port = self.ports[0]
@@ -147,7 +149,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showHR(self):
         if len(self.buffer) >= Configuration.data_points_number_in_the_buffer:
-            print(self.sp.measure_heart_rate(self.buffer))
+            #print(self.sp.measure_heart_rate(self.buffer))
+            _, measures = self.sp.make_ecg_analysis(np.array(self.buffer))
+            if measures is None:
+                return
+            print(f"HR: {measures['bpm']}")
+
+    def showHeartMeasures(self):
+        if len(self.neverending_buffer) >= Configuration.data_points_number_in_the_buffer:
+            _, measures = self.sp.make_ecg_analysis(np.array(self.neverending_buffer))
+            if measures is None:
+                return
+            for key in measures.keys():
+                if not np.isnan(measures[key]):
+                    print(f'{key}: {measures[key]}')
 
     def open_file(self):
         if self.file is None:
@@ -167,6 +182,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def update_data(self, data_point):
+
+        if len(self.buffer) == Configuration.data_points_number_in_the_buffer:
+            self.buffer = self.buffer[1:]
+        self.buffer.append(data_point)
+        if self.x[-1] % (1*Configuration.Fs) == 0:
+            self.showHR()
+
+        self.neverending_buffer.append(data_point)
+        if self.x[-1] % (10*Configuration.Fs) == 0:
+            self.showHeartMeasures()
+
         if Configuration.filtering:
             data_point = self.sp.use_all_filters(data_point)
 
@@ -174,15 +200,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.x = self.x[1:]  # Remove the first x element
             self.y = self.y[1:]  # Remove the first y element
         self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last - x-axis in numbers of samples
-        # self.x.append(self.x[-1] + 1/Configuration.Fs)  # Add a new value 1/Fs higher than the last - x-axis in seconds
         self.y.append(data_point)  # Add a new value
-        self.data_line.setData(self.x, self.y)  # Update the data
-
-        if len(self.buffer) == Configuration.data_points_number_in_the_buffer:
-            self.buffer = self.buffer[1:]
-        self.buffer.append(data_point)
-        if self.x[-1] % Configuration.Fs == 0:
-            self.showHR()
+        x_in_seconds = np.array(self.x)/Configuration.Fs
+        self.data_line.setData(x_in_seconds, self.y)  # Update the data
 
         if self.file is not None:
             write_data_point_to_file(data_point, self.file)
