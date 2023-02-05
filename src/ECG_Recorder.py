@@ -162,7 +162,7 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(int)
     def update_data(self, data_point):
         if Configuration.filtering:
-            data_point = self.sp.filter_in_real_time(data_point)
+            data_point = self.sp.use_all_filters(data_point)
 
         if len(self.x) == Configuration.data_points_number_in_the_plot:
             self.x = self.x[1:]  # Remove the first x element

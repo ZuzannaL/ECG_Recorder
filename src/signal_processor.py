@@ -1,43 +1,38 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as ss
+from enum import auto, Enum
 
+class FilterType(Enum):
+    highpass = auto()
+    bandstop = auto()
+    lowpass = auto()
 
 class SignalProcessor:
     def __init__(self, Fs):
         self.Fs = Fs
-        self.highpass_zi = None
-        self.bandstop_zi = None
-        self.lowpass_zi = None
-        self.highpass_ba = ss.butter(N=2, Wn=0.5, btype='highpass', fs=self.Fs)
-        self.bandstop_ba = ss.butter(N=5, Wn=(49, 51), btype='bandstop', fs=self.Fs)
-        self.lowpass_ba = ss.butter(N=10, Wn=40, btype='lowpass', fs=self.Fs)
+        self.zi = {
+            FilterType.highpass: None,
+            FilterType.bandstop: None,
+            FilterType.lowpass: None,
+        }
+        self.ba = {
+            FilterType.highpass: ss.butter(N=2, Wn=0.5, btype='highpass', fs=self.Fs),
+            FilterType.bandstop: ss.butter(N=5, Wn=(49, 51), btype='bandstop', fs=self.Fs),
+            FilterType.lowpass: ss.butter(N=10, Wn=40, btype='lowpass', fs=self.Fs),
+        }
 
-    def filter_highpass(self, x):
-        [b, a] = self.highpass_ba
-        if self.highpass_zi is None:
-            self.highpass_zi = ss.lfilter_zi(b, a) * x #x[0]
-        y, self.highpass_zi = ss.lfilter(b, a, [x], zi=self.highpass_zi) #x
+    def filter_in_real_time(self, x, filter_type):
+        [b, a] = self.ba[filter_type]
+        if self.zi[filter_type] is None:
+            self.zi[filter_type] = ss.lfilter_zi(b, a) * x #x[0]
+        y, zi = ss.lfilter(b, a, [x], zi=self.zi[filter_type]) #x
         return y[0] #y
 
-    def filter_bandstop(self, x):
-        [b, a] = self.bandstop_ba
-        if self.bandstop_zi is None:
-            self.bandstop_zi = ss.lfilter_zi(b, a) * x #x[0]
-        y, self.bandstop_zi = ss.lfilter(b, a, [x], zi=self.bandstop_zi) #x
-        return y[0] #y
-
-    def filter_lowpass(self, x):
-        [b, a] = self.lowpass_ba
-        if self.lowpass_zi is None:
-            self.lowpass_zi = ss.lfilter_zi(b, a) * x #x[0]
-        y, self.lowpass_zi = ss.lfilter(b, a, [x], zi=self.lowpass_zi) #x
-        return y[0] #y
-
-    def filter_in_real_time(self, data_point):
-        data_point = self.filter_highpass(data_point)
-        data_point = self.filter_bandstop(data_point)
-        data_point = self.filter_lowpass(data_point)
+    def use_all_filters(self, data_point):
+        data_point = self.filter_in_real_time(data_point, FilterType.highpass)
+        data_point = self.filter_in_real_time(data_point, FilterType.bandstop)
+        data_point = self.filter_in_real_time(data_point, FilterType.lowpass)
         return data_point
 
 def read_from_file(filename):
@@ -99,7 +94,7 @@ if __name__ == '__main__':
     sp = SignalProcessor(Fs)
     s_filtered2 = []
     for x in s:
-        s_filtered2.append(sp.filter_in_real_time(x))
+        s_filtered2.append(sp.use_all_filters(x))
     s_filtered2 = np.array(s_filtered2)
 
     plt.figure()
