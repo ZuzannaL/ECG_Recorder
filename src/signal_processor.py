@@ -28,7 +28,7 @@ class SignalProcessor:
         [b, a] = self.ba[filter_type]
         if self.zi[filter_type] is None:
             self.zi[filter_type] = ss.lfilter_zi(b, a) * x #x[0]
-        y, zi = ss.lfilter(b, a, [x], zi=self.zi[filter_type]) #x
+        y, self.zi[filter_type] = ss.lfilter(b, a, [x], zi=self.zi[filter_type]) #x
         return y[0] #y
 
     def use_all_filters(self, data_point):
