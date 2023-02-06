@@ -6,6 +6,45 @@ import heartpy as hp
 
 NUMBER_OF_SEC_IN_ONE_MIN = 60
 
+PQRST = np.array([4.41482618, 7.85653347, 25.84121989, 46.75581946,
+                  50.83381902, 25.41901536, -21.75812795, -63.20311102,
+                  -72.71279981, -49.03472082, -14.95439925, 5.94865221,
+                  5.69025298, -11.97565694, -39.29386757, -62.58525323,
+                  -62.18350527, -27.1123294 , 30.26955494, 83.6813986 ,
+                  119.3501638 , 148.00364559, 190.94392147, 257.55508791,
+                  331.10815039, 370.08128652, 330.45363897, 200.44193852,
+                  18.54102904, -145.31094118, -231.24356965, -221.43951018,
+                  -143.46839843, -49.05906436, 15.0990981 , 29.59255684,
+                  8.23979074, -17.33185772, -26.64900458, -26.45151322,
+                  -34.86402437, -53.59551358, -65.25699953, -56.96484008,
+                  -35.5089768 , -16.86804537, -9.44232856, -10.58153935,
+                  -13.33518165, -13.70277696, -13.69744726, -16.73186356,
+                  -18.52018119, -7.24943199, 21.62926674, 53.52362217,
+                  65.43013106, 51.37006101, 31.77874084, 30.54725165,
+                  44.09921493, 44.09364219, 16.65507698, -11.82429386,
+                  -2.42588301, 45.62498402, 88.27266985, 86.79908517,
+                  53.06914133, 33.27271388, 51.99795055, 86.88320704,
+                  101.13653957, 87.98311107, 73.708675  , 83.34929361,
+                  113.35665489, 138.4958345 , 140.62061425, 127.54477317,
+                  122.8357265 , 138.62161937, 162.14910028, 170.54434796,
+                  155.73033006, 131.75245786, 118.30226917, 119.2560339 ,
+                  118.51852173, 97.49440898, 56.02420801, 13.2350197 ,
+                  -13.57605165, -26.59750229, -39.83234258, -57.98907405,
+                  -71.12318426, -69.86009931, -57.86404449, -46.70979571,
+                  -44.14492647, -50.46549323, -62.11563712, -74.20305195,
+                  -80.76699439, -78.21436995, -71.41308061, -71.58789709,
+                  -82.27676596, -91.51961739, -86.81422007, -74.3902697 ,
+                  -70.78878169, -75.81167473, -69.98258559, -44.16270243,
+                  -16.9745266 , -13.39573078, -35.78296381, -64.82923264,
+                  -81.86114117, -81.08559281, -65.28942429, -42.44229945,
+                  -27.72473111, -34.39385761, -53.15643835, -52.92739546,
+                  -18.4739059 , 20.1553234])
+
+QRS = np.array([ -62.18350527,  -27.1123294 ,   30.26955494,   83.6813986 ,
+        119.3501638 ,  148.00364559,  190.94392147,  257.55508791,
+        331.10815039,  370.08128652,  330.45363897,  200.44193852,
+         18.54102904, -145.31094118])
+
 class FilterType(Enum):
     highpass = auto()
     bandstop = auto()
@@ -38,18 +77,37 @@ class SignalProcessor:
         data_point = self.filter_in_real_time(data_point, FilterType.lowpass)
         return data_point
 
+    def find_hr_using_find_peaks(self, s):
+        peaks_indices, _ = ss.find_peaks(s, height=350, distance=66)
+        distances = np.diff(peaks_indices)
+        average_distance = np.mean(distances)
+        hr = self.Fs * NUMBER_OF_SEC_IN_ONE_MIN / average_distance
+        return hr
+
+    def find_hr_using_heartpy(self, s):
+        _, measures = self.make_ecg_analysis(np.array(s))
+        if measures is None:
+            return np.nan
+        hr = float(measures['bpm'])
+        return hr
+
+    def find_hr_using_find_peaks_and_correlation(self, s, peak=PQRST):
+        correlation = np.correlate(s, peak) # todo test ss.correlate
+        normalized_correlation = correlation / max(correlation)
+        peaks_indices, _ = ss.find_peaks(normalized_correlation, height=0.5, distance=66)
+        distances = np.diff(peaks_indices)
+        average_distance = np.mean(distances)
+        hr = self.Fs * NUMBER_OF_SEC_IN_ONE_MIN / average_distance
+        return hr
+
     def measure_heart_rate(self, s):
-        option = 2
+        option = 3
         if option == 1:
-            peaks_indices, _ = ss.find_peaks(s, height=350, distance=66)
-            distances = np.diff(peaks_indices)
-            average_distance = np.mean(distances)
-            hr = self.Fs * NUMBER_OF_SEC_IN_ONE_MIN / average_distance
+            hr = self.find_hr_using_find_peaks(s)
         elif option == 2:
-            _, measures = self.make_ecg_analysis(np.array(s))
-            if measures is None:
-                return np.nan
-            hr = float(measures['bpm'])
+            hr = self.find_hr_using_heartpy(s)
+        elif option == 3:
+            hr = self.find_hr_using_find_peaks_and_correlation(s)
 
         if hr < 30 or hr > 200:
             hr = np.nan
