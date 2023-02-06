@@ -77,12 +77,20 @@ class SignalProcessor:
         data_point = self.filter_in_real_time(data_point, FilterType.lowpass)
         return data_point
 
-    def find_hr_using_find_peaks(self, s):
+    def find_peaks(self, s):
         peaks_indices, _ = ss.find_peaks(s, height=350, distance=66)
+        return peaks_indices
+
+    def find_peaks_using_correlation(self, s, peak=PQRST):
+        correlation = np.correlate(s, peak) # todo test ss.correlate
+        normalized_correlation = correlation / max(correlation)
+        peaks_indices, _ = ss.find_peaks(normalized_correlation, height=0.5, distance=66)
+        return peaks_indices
+
+    def find_hr_from_peaks_indices(self, peaks_indices):
         distances = np.diff(peaks_indices)
         average_distance = np.mean(distances)
-        hr = self.Fs * NUMBER_OF_SEC_IN_ONE_MIN / average_distance
-        return hr
+        return self.Fs * NUMBER_OF_SEC_IN_ONE_MIN / average_distance
 
     def find_hr_using_heartpy(self, s):
         _, measures = self.make_ecg_analysis(np.array(s))
@@ -91,23 +99,16 @@ class SignalProcessor:
         hr = float(measures['bpm'])
         return hr
 
-    def find_hr_using_find_peaks_and_correlation(self, s, peak=PQRST):
-        correlation = np.correlate(s, peak) # todo test ss.correlate
-        normalized_correlation = correlation / max(correlation)
-        peaks_indices, _ = ss.find_peaks(normalized_correlation, height=0.5, distance=66)
-        distances = np.diff(peaks_indices)
-        average_distance = np.mean(distances)
-        hr = self.Fs * NUMBER_OF_SEC_IN_ONE_MIN / average_distance
-        return hr
-
-    def measure_heart_rate(self, s):
+    def find_hr(self, s):
         option = 3
         if option == 1:
-            hr = self.find_hr_using_find_peaks(s)
+            peaks_indices = self.find_peaks(s)
+            hr = self.find_hr_from_peaks_indices(peaks_indices)
         elif option == 2:
             hr = self.find_hr_using_heartpy(s)
         elif option == 3:
-            hr = self.find_hr_using_find_peaks_and_correlation(s)
+            peaks_indices = self.find_peaks_using_correlation(s)
+            hr = self.find_hr_from_peaks_indices(peaks_indices)
 
         if hr < 30 or hr > 200:
             hr = np.nan

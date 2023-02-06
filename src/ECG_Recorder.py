@@ -151,7 +151,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showHR(self):
         if len(self.buffer) >= Configuration.data_points_number_in_the_buffer:
-            hr = self.sp.measure_heart_rate(self.buffer)
+            hr = self.sp.find_hr(self.buffer)
             if np.isnan(hr):
                 self.ui.lcdNumber_HR.display('---')
             else:
@@ -170,7 +170,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return displayed_text
 
 
-    def showHeartMeasures(self):
+    def showECGAnalysis(self):
         if len(self.neverending_buffer) >= Configuration.data_points_number_in_the_buffer:
             _, measures = self.sp.make_ecg_analysis(np.array(self.neverending_buffer))
             if measures is None:
@@ -199,7 +199,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.neverending_buffer.append(data_point)
         if self.x[-1] % (10*Configuration.Fs) == 0:
-            self.showHeartMeasures()
+            self.showECGAnalysis()
 
         if Configuration.filtering: # todo decide if data given to heartpy methods will be filtered or raw
             data_point = self.sp.use_all_filters(data_point)
