@@ -75,6 +75,8 @@ class Ui_MainWindow(object):
         self.label_HR.setObjectName("label_HR")
         self.horizontalLayout.addWidget(self.label_HR)
         self.lcdNumber_HR = QtWidgets.QLCDNumber(self.centralwidget)
+        self.lcdNumber_HR.setDigitCount(3)
+        self.lcdNumber_HR.setSegmentStyle(QtWidgets.QLCDNumber.Filled)
         self.lcdNumber_HR.setObjectName("lcdNumber_HR")
         self.horizontalLayout.addWidget(self.lcdNumber_HR)
         self.verticalLayout_2.addLayout(self.horizontalLayout)

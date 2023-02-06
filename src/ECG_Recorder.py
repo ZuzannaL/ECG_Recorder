@@ -50,6 +50,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.comboBox_baudrate.setCurrentText(self._translate("MainWindow", str(Configuration.baudrate)))
+        self.ui.lcdNumber_HR.display('---')
         self.setupGraphWidget()
 
         self.file = None
@@ -149,11 +150,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showHR(self):
         if len(self.buffer) >= Configuration.data_points_number_in_the_buffer:
-            #print(self.sp.measure_heart_rate(self.buffer))
-            _, measures = self.sp.make_ecg_analysis(np.array(self.buffer))
-            if measures is None:
-                return
-            print(f"HR: {measures['bpm']}")
+            hr = self.sp.measure_heart_rate(self.buffer)
+            if np.isnan(hr):
+                self.ui.lcdNumber_HR.display('---')
+                print(f"HR: ---")
+            else:
+                self.ui.lcdNumber_HR.display(hr)
+                print(f"HR: {str(hr)}")
 
     def showHeartMeasures(self):
         if len(self.neverending_buffer) >= Configuration.data_points_number_in_the_buffer:
@@ -183,18 +186,18 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(int)
     def update_data(self, data_point):
 
+        self.neverending_buffer.append(data_point)
+        if self.x[-1] % (10*Configuration.Fs) == 0:
+            self.showHeartMeasures()
+
+        if Configuration.filtering: # todo decide if data given to heartpy methods will be filtered or raw
+            data_point = self.sp.use_all_filters(data_point)
+
         if len(self.buffer) == Configuration.data_points_number_in_the_buffer:
             self.buffer = self.buffer[1:]
         self.buffer.append(data_point)
         if self.x[-1] % (1*Configuration.Fs) == 0:
             self.showHR()
-
-        self.neverending_buffer.append(data_point)
-        if self.x[-1] % (10*Configuration.Fs) == 0:
-            self.showHeartMeasures()
-
-        if Configuration.filtering:
-            data_point = self.sp.use_all_filters(data_point)
 
         if len(self.x) == Configuration.data_points_number_in_the_plot:
             self.x = self.x[1:]  # Remove the first x element

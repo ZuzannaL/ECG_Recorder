@@ -39,14 +39,27 @@ class SignalProcessor:
         return data_point
 
     def measure_heart_rate(self, s):
-        peaks_indices, _ = ss.find_peaks(s, height=400, distance=66)
-        distances = np.diff(peaks_indices)
-        average_distance = np.mean(distances)
-        return '{:.0f}'.format(self.Fs * NUMBER_OF_SEC_IN_ONE_MIN / average_distance)
+        option = 2
+        if option == 1:
+            peaks_indices, _ = ss.find_peaks(s, height=350, distance=66)
+            distances = np.diff(peaks_indices)
+            average_distance = np.mean(distances)
+            hr = self.Fs * NUMBER_OF_SEC_IN_ONE_MIN / average_distance
+        elif option == 2:
+            _, measures = self.make_ecg_analysis(np.array(s))
+            if measures is None:
+                return np.nan
+            hr = float(measures['bpm'])
+
+        if hr < 30 or hr > 200:
+            hr = np.nan
+        if not np.isnan(hr):
+            hr = int(hr)
+        return hr
 
     def make_ecg_analysis(self, s):
         try:
-            working_data, measures = hp.process(s, self.Fs, report_time=False)
+            working_data, measures = hp.process(s, self.Fs, clean_rr=True, windowsize=1.5)
             return working_data, measures
         except hp.exceptions.BadSignalWarning:
             return None, None
@@ -98,10 +111,10 @@ if __name__ == '__main__':
     # filename = r'..\data\2023-02-01_121032.txt' # OK
     # filename = r'..\data\2023-02-01_153643.txt' # OK
     # filename = r'..\data\2023-02-01_153853.txt' # OK
-    # filename = r'..\data\2023-02-01_155235.txt' # OK
+    filename = r'..\data\2023-02-01_155235.txt' # OK
     # filename = r'..\data\2023-02-01_155325.txt' # MEH
     # filename = r'..\data\2023-02-01_155402.txt' # BAD
-    filename = r'..\data\2023-02-01_155958.txt' # MEH - MY ECG
+    # filename = r'..\data\2023-02-01_155958.txt' # MEH - MY ECG
 
     # filename = r'..\data\2023-02-04_193616.txt'
     # filename = r'..\data\2023-02-04_194228.txt'
@@ -121,6 +134,10 @@ if __name__ == '__main__':
 
     print(s)
     s_filtered = filter_signal_offline(s, Fs)
+
+    plt.figure()
+    plt.plot(np.fft.rfftfreq(len(s_filtered), 1./Fs), abs(np.fft.rfft(s_filtered))**2)
+    plt.show()
 
     peaks_indices, _ = ss.find_peaks(s_filtered, height=400, distance=66)
     distances = np.diff(peaks_indices)
