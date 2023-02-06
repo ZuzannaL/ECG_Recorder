@@ -137,22 +137,6 @@
         </item>
        </layout>
       </item>
-      <item>
-       <widget class="QGraphicsView" name="graphicsView_plot">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>600</width>
-          <height>0</height>
-         </size>
-        </property>
-       </widget>
-      </item>
      </layout>
     </item>
     <item>
