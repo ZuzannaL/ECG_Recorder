@@ -80,8 +80,9 @@ class MainWindow(QtWidgets.QMainWindow):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.graphWidget.sizePolicy().hasHeightForWidth())
         self.graphWidget.setSizePolicy(sizePolicy)
+        self.graphWidget.setMinimumSize(QtCore.QSize(600, 0))
         self.graphWidget.setObjectName("graphWidget")
-        self.ui.verticalLayout_2.addWidget(self.graphWidget)
+        self.ui.verticalLayout_1.addWidget(self.graphWidget)
 
         self.x = [0]
         self.y = [0]
