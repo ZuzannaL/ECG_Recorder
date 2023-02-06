@@ -154,19 +154,29 @@ class MainWindow(QtWidgets.QMainWindow):
             hr = self.sp.measure_heart_rate(self.buffer)
             if np.isnan(hr):
                 self.ui.lcdNumber_HR.display('---')
-                print(f"HR: ---")
             else:
                 self.ui.lcdNumber_HR.display(hr)
-                print(f"HR: {str(hr)}")
+
+    @staticmethod
+    def create_heart_measures_display_text(measures):
+        keys = ['bpm', 'ibi', 'sdnn', 'sdsd', 'rmssd', 'pnn20', 'pnn50', 'hr_mad', 'sd1', 'sd2', 's', 'sd1/sd2']
+        displayed_measures = {}
+        for key in keys:
+            if not np.isnan(measures[key]):
+                displayed_measures[key] = '{:.2f}'.format(measures[key])
+            else:
+                displayed_measures[key] = '--'
+        displayed_text = f"<html><head/><body><p><span style=\" font-size:8pt;\">ECG measures:<br/>average hr: {displayed_measures['bpm']}<br/>ibi: {displayed_measures['ibi']}<br/>sdnn: {displayed_measures['sdnn']}<br/>sdsd: {displayed_measures['sdsd']}<br/>rmssd: {displayed_measures['rmssd']}<br/>pnn20: {displayed_measures['pnn20']}<br/>pnn50: {displayed_measures['pnn50']}<br/>hr mad: {displayed_measures['hr_mad']}<br/>sd1: {displayed_measures['sd1']}<br/>sd2: {displayed_measures['sd2']}<br/>s: {displayed_measures['s']}<br/>sd1/sd2: {displayed_measures['sd1/sd2']}</span></p></body></html>"
+        return displayed_text
+
 
     def showHeartMeasures(self):
         if len(self.neverending_buffer) >= Configuration.data_points_number_in_the_buffer:
             _, measures = self.sp.make_ecg_analysis(np.array(self.neverending_buffer))
             if measures is None:
                 return
-            for key in measures.keys():
-                if not np.isnan(measures[key]):
-                    print(f'{key}: {measures[key]}')
+            displayed_text = self.create_heart_measures_display_text(measures)
+            self.ui.label_ecg_measures.setText(displayed_text)
 
     def open_file(self):
         if self.file is None:

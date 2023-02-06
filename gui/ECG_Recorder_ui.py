@@ -127,4 +127,4 @@ class Ui_MainWindow(object):
         self.label_filename.setText(_translate("MainWindow", "Filename"))
         self.checkBox_filtering.setText(_translate("MainWindow", "Filtering"))
         self.label_HR.setText(_translate("MainWindow", "Heart Rate"))
-        self.label_ecg_measures.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:8pt;\">ECG measures:<br/>average hr: --<br/>ibi: --<br/>sdnn: --<br/>sdsd: --<br/>rmssd: --<br/>pnn20: --<br/>pnn50: --<br/>hr mad: --<br/>sd1: --<br/>sd2: --<br/></span><span style=\" font-size:9pt;\">s: --<br/></span><span style=\" font-size:8pt;\">sd1/sd2: --</span></p></body></html>"))
+        self.label_ecg_measures.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:8pt;\">ECG measures:<br/>average hr: --<br/>ibi: --<br/>sdnn: --<br/>sdsd: --<br/>rmssd: --<br/>pnn20: --<br/>pnn50: --<br/>hr mad: --<br/>sd1: --<br/>sd2: --<br/>s: --<br/>sd1/sd2: --</span></p></body></html>"))
