@@ -93,7 +93,7 @@ class SignalProcessor:
         return self.Fs * NUMBER_OF_SEC_IN_ONE_MIN / average_distance
 
     def find_hr_using_heartpy(self, s):
-        _, measures = self.make_ecg_analysis(np.array(s))
+        _, measures = self.make_ecg_analysis_using_heartpy(np.array(s))
         if measures is None:
             return np.nan
         hr = float(measures['bpm'])
@@ -116,12 +116,57 @@ class SignalProcessor:
             hr = int(hr)
         return hr
 
-    def make_ecg_analysis(self, s):
+    def make_ecg_analysis_using_heartpy(self, s):
         try:
             working_data, measures = hp.process(s, self.Fs, clean_rr=True, windowsize=1.5)
             return working_data, measures
         except hp.exceptions.BadSignalWarning:
             return None, None
+
+    def make_ecg_analysis_using_heartpy_on_peaks_found_using_correlation(self, s):
+        peaks_indices = self.find_peaks_using_correlation(s)
+        distances = np.diff(peaks_indices) # distances in number of samples
+
+        # based on calc_ts_measures function from heartpy
+        rr_list = (1000/self.Fs)*distances # distances in miliseconds
+        rr_diff = np.diff(rr_list)
+        rr_sqdiff = np.power(rr_diff, 2)
+
+        keys = ['bpm', 'ibi', 'sdnn', 'sdsd', 'rmssd', 'pnn20', 'pnn50', 'hr_mad', 'sd1', 'sd2', 's', 'sd1/sd2']
+        measures = {}
+        working_data = {}
+        for key in keys:
+            measures[key] = np.nan
+        working_data['nn20'] = np.nan
+        working_data['nn50'] = np.nan
+
+        measures['bpm'] = 60000 / np.mean(rr_list)
+        measures['ibi'] = np.mean(rr_list)
+        measures['sdnn'] = np.std(rr_list)
+        measures['sdsd'] = np.std(rr_diff)
+        measures['rmssd'] = np.sqrt(np.mean(rr_sqdiff))
+        nn20 = rr_diff[np.where(rr_diff > 20.0)]
+        nn50 = rr_diff[np.where(rr_diff > 50.0)]
+        working_data['nn20'] = nn20
+        working_data['nn50'] = nn50
+        try:
+            measures['pnn20'] = float(len(nn20)) / float(len(rr_diff))
+        except:
+            measures['pnn20'] = np.nan
+        try:
+            measures['pnn50'] = float(len(nn50)) / float(len(rr_diff))
+        except:
+            measures['pnn50'] = np.nan
+
+        return measures
+
+    def make_ecg_analysis(self, s):
+        option = 2
+        if option == 1:
+            _, measures = self.make_ecg_analysis_using_heartpy(s)
+        elif option == 2:
+            measures = self.make_ecg_analysis_using_heartpy_on_peaks_found_using_correlation(s)
+        return measures
 
 def read_from_file(filename):
     with open(filename) as f:

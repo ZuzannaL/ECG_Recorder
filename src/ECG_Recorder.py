@@ -172,7 +172,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showECGAnalysis(self):
         if len(self.neverending_buffer) >= Configuration.data_points_number_in_the_buffer:
-            _, measures = self.sp.make_ecg_analysis(np.array(self.neverending_buffer))
+            measures = self.sp.make_ecg_analysis(np.array(self.neverending_buffer))
             if measures is None:
                 return
             displayed_text = self.create_heart_measures_display_text(measures)
@@ -196,11 +196,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(int)
     def update_data(self, data_point):
-
-        self.neverending_buffer.append(data_point)
-        if self.x[-1] % (10*Configuration.Fs) == 0:
-            self.showECGAnalysis()
-
         if Configuration.filtering: # todo decide if data given to heartpy methods will be filtered or raw
             data_point = self.sp.use_all_filters(data_point)
 
@@ -209,6 +204,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.buffer.append(data_point)
         if self.x[-1] % (1*Configuration.Fs) == 0:
             self.showHR()
+
+        self.neverending_buffer.append(data_point)
+        if self.x[-1] % (10*Configuration.Fs) == 0:
+            self.showECGAnalysis()
 
         if len(self.x) == Configuration.data_points_number_in_the_plot:
             self.x = self.x[1:]  # Remove the first x element
