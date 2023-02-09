@@ -132,7 +132,7 @@ class SignalProcessor:
         rr_diff = np.diff(rr_list)
         rr_sqdiff = np.power(rr_diff, 2)
 
-        keys = ['bpm', 'ibi', 'sdnn', 'sdsd', 'rmssd', 'pnn20', 'pnn50', 'hr_mad', 'sd1', 'sd2', 's', 'sd1/sd2']
+        keys = ['bpm', 'ibi', 'sdnn', 'sdsd', 'rmssd', 'pnn20', 'pnn50']
         measures = {}
         working_data = {}
         for key in keys:

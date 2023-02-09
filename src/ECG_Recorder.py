@@ -159,14 +159,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @staticmethod
     def create_heart_measures_display_text(measures):
-        keys = ['bpm', 'ibi', 'sdnn', 'sdsd', 'rmssd', 'pnn20', 'pnn50', 'hr_mad', 'sd1', 'sd2', 's', 'sd1/sd2']
+        keys = ['bpm', 'ibi', 'sdnn', 'sdsd', 'rmssd', 'pnn20', 'pnn50']
         displayed_measures = {}
         for key in keys:
             if not np.isnan(measures[key]):
                 displayed_measures[key] = '{:.2f}'.format(measures[key])
             else:
                 displayed_measures[key] = '--'
-        displayed_text = f"<html><head/><body><p><span style=\" font-size:8pt;\">ECG measures:<br/>average hr: {displayed_measures['bpm']}<br/>ibi: {displayed_measures['ibi']}<br/>sdnn: {displayed_measures['sdnn']}<br/>sdsd: {displayed_measures['sdsd']}<br/>rmssd: {displayed_measures['rmssd']}<br/>pnn20: {displayed_measures['pnn20']}<br/>pnn50: {displayed_measures['pnn50']}<br/>hr mad: {displayed_measures['hr_mad']}<br/>sd1: {displayed_measures['sd1']}<br/>sd2: {displayed_measures['sd2']}<br/>s: {displayed_measures['s']}<br/>sd1/sd2: {displayed_measures['sd1/sd2']}</span></p></body></html>"
+        displayed_text = f"<html><head/><body><p><span style=\" font-size:9pt;\">Average ECG <br/>measures:<br/>hr: {displayed_measures['bpm']}<br/>ibi: {displayed_measures['ibi']}<br/>sdnn: {displayed_measures['sdnn']}<br/>sdsd: {displayed_measures['sdsd']}<br/>rmssd: {displayed_measures['rmssd']}<br/>pnn20: {displayed_measures['pnn20']}<br/>pnn50: {displayed_measures['pnn50']}<br/></span></p></body></html>"
         return displayed_text
 
 
