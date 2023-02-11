@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QObject
 import pyqtgraph as pg
 import sys
@@ -82,6 +82,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.graphWidget.setSizePolicy(sizePolicy)
         self.graphWidget.setMinimumSize(QtCore.QSize(600, 0))
         self.graphWidget.setObjectName("graphWidget")
+
+        label_style = {"color": "#969696", "font-size": "9pt"}
+        font = QtGui.QFont()
+        font.setPointSize(9)
+        x_axis = self.graphWidget.getPlotItem().getAxis("bottom")
+        y_axis = self.graphWidget.getPlotItem().getAxis("left")
+        x_axis.setLabel(text="Time", units="s", **label_style)
+        y_axis.setLabel(text="Amplitude", units="V", **label_style)
+        x_axis.setTickFont(font)
+        y_axis.setTickFont(font)
+
         self.ui.verticalLayout_1.addWidget(self.graphWidget)
 
         self.x = [0]
