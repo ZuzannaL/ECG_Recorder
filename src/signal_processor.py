@@ -98,6 +98,28 @@ class SignalProcessor:
         peaks_indices, _ = ss.find_peaks(normalized_correlation, height=0.5, distance=66)
         return peaks_indices
 
+    def moving_average(self, x, w):
+        z = np.zeros(w // 2 - 1)
+        ma = np.convolve(x, np.ones(w), 'valid') / w
+        con = np.concatenate([z, ma, z])
+        return con
+
+    def find_peaks_using_diff(self, s, window_size=21):
+        s_ma = self.moving_average(s, 5)
+        d = np.diff(s_ma)
+        d_abs = np.abs(d)
+        d_abs2 = d_abs ** 2
+        peaks_indices, _ = ss.find_peaks(d_abs2, height=5000, distance=66)
+
+        maximized_peaks_indices = []
+        mid = window_size // 2
+        for i in peaks_indices:
+            windowed_s = s_filtered[i - mid:i + mid + 1]
+            max_ind = np.argmax(np.array(windowed_s))
+            new_peak_index = max_ind - mid
+            maximized_peaks_indices.append(i + new_peak_index)
+        return np.array(maximized_peaks_indices)
+
     def find_hr_from_peaks_indices(self, peaks_indices):
         distances = np.diff(peaks_indices)
         average_distance = np.mean(distances)
@@ -235,17 +257,19 @@ if __name__ == '__main__':
     sp = SignalProcessor(Fs)
     # plot_all_filters_characteristics(sp)
 
-    s = s[360 * Fs:400 * Fs]
+    s = s[360*Fs:400*Fs]
+    # s = s[3*60*Fs:(3*60+5)*Fs]
+    # s = s[53500:56500]
 
     s_filtered = []
     for x in s:
         s_filtered.append(sp.use_all_filters(x))
     s_filtered = np.array(s_filtered)
 
-    peaks_indices = sp.find_peaks_using_correlation(s_filtered)
-    measures = sp.make_ecg_analysis_using_heartpy_on_peaks_found_using_correlation(s_filtered)
-    for measure, value in measures.items():
-        print(f'{measure}: {value}')
+    peaks_indices = sp.find_peaks_using_diff(s_filtered)
+    #measures = sp.make_ecg_analysis_using_heartpy_on_peaks_found_using_correlation(s_filtered)
+    # for measure, value in measures.items():
+    #     print(f'{measure}: {value}')
 
     # Plots
     x = np.arange(0, len(s))
