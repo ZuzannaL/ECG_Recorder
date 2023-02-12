@@ -2,6 +2,10 @@ from datetime import datetime
 import serial
 from serial.tools.list_ports import comports
 
+def convert_units_to_volts(value, adc_resolution=12, max_voltage=3.3):
+    quantization_level = 2**adc_resolution
+    max_value = quantization_level-1
+    return value / max_value * max_voltage
 
 def find_available_ports():
     return [port.name for port in comports()]
@@ -25,7 +29,8 @@ def read_from_serial_port(port, baudrate, **kwargs):
                 value += x
             else:
                 if value != '':
-                    yield int(value)
+                    # yield convert_units_to_volts(int(value), adc_resolution=12, max_voltage=3.3)
+                    yield float(value)
                     value = ''
                 else:
                     continue

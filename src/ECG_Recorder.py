@@ -7,7 +7,7 @@ from pathlib import Path
 import serial
 import numpy as np
 
-from port_handler import read_from_serial_port, write_data_point_to_file, find_available_ports
+from port_handler import read_from_serial_port, write_data_point_to_file, find_available_ports, convert_units_to_volts
 from signal_processor import SignalProcessor
 from gui.ECG_Recorder_ui import Ui_MainWindow
 
@@ -22,10 +22,12 @@ class Configuration:
     data_points_number_in_the_plot = 3*Fs
     data_points_number_in_the_buffer = 10*Fs
     filtering = False
+    adc_resolution = 12
+    max_voltage = 3.3
 
 class PortMonitor(QObject):
 
-    image_signal = QtCore.pyqtSignal(int)
+    image_signal = QtCore.pyqtSignal(float)
 
     @QtCore.pyqtSlot()
     def monitor_port(self):
@@ -205,7 +207,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         self.close_file()
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.pyqtSlot(float)
     def update_data(self, data_point):
         if Configuration.filtering: # todo decide if data given to heartpy methods will be filtered or raw
             data_point = self.sp.use_all_filters(data_point)
@@ -226,7 +228,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last - x-axis in numbers of samples
         self.y.append(data_point)  # Add a new value
         x_in_seconds = np.array(self.x)/Configuration.Fs
-        self.data_line.setData(x_in_seconds, self.y)  # Update the data
+        y_in_V = convert_units_to_volts(np.array(self.y), Configuration.adc_resolution, Configuration.max_voltage)
+        self.data_line.setData(x_in_seconds, y_in_V)  # Update the data
 
         if self.file is not None:
             write_data_point_to_file(data_point, self.file)

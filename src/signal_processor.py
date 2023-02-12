@@ -4,6 +4,17 @@ import scipy.signal as ss
 from enum import auto, Enum
 import heartpy as hp
 
+plt.rcParams.update({'font.family': 'Calibri'})
+plt.rcParams.update({'font.size': 12})
+
+params = {'legend.fontsize': 12,
+          'axes.labelsize': 14,
+          'axes.titlesize': 20,
+          'xtick.labelsize': 12,
+          'ytick.labelsize': 12}
+
+plt.rcParams.update(params)
+
 NUMBER_OF_SEC_IN_ONE_MIN = 60
 
 PQRST = np.array([4.41482618, 7.85653347, 25.84121989, 46.75581946,
@@ -190,7 +201,7 @@ def filter_signal_offline(s, Fs):
     # plot_filter_characteristics(b, a, Fs)
     s = ss.lfilter(b, a, s)
     [b, a] = ss.butter(N=10, Wn=40, btype='lowpass', fs=Fs)
-    #plot_filter_characteristics(b, a, Fs)
+    # plot_filter_characteristics(b, a, Fs)
     s = ss.lfilter(b, a, s)
     return s
 
@@ -203,10 +214,15 @@ def plot_filter_characteristics(b, a, Fs):
     plt.plot(f, abs(h))
     plt.grid('on')
     plt.xlim([0, 64])
+    plt.xlabel('Częstotliwość [Hz]') # Frequency Częstotliwość
+    plt.ylabel('Moduł transmitancji') # Transfer function module Moduł transmitancji
     plt.subplot(122)
     plt.plot(f, angle, 'g')
     plt.grid('on')
     plt.xlim([0, 64])
+    plt.xlabel('Częstotliwość [Hz]') # Frequency Częstotliwość
+    plt.ylabel('Faza') # Phase Faza
+    plt.tight_layout()
 
 
 if __name__ == '__main__':
@@ -239,9 +255,9 @@ if __name__ == '__main__':
     print(s)
     s_filtered = filter_signal_offline(s, Fs)
 
-    plt.figure()
-    plt.plot(np.fft.rfftfreq(len(s_filtered), 1./Fs), abs(np.fft.rfft(s_filtered))**2)
-    plt.show()
+    # plt.figure()
+    # plt.plot(np.fft.rfftfreq(len(s_filtered), 1./Fs), abs(np.fft.rfft(s_filtered))**2)
+    # plt.show()
 
     peaks_indices, _ = ss.find_peaks(s_filtered, height=400, distance=66)
     distances = np.diff(peaks_indices)
