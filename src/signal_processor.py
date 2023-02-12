@@ -57,18 +57,18 @@ class SignalProcessor:
 
     def find_R_peaks(self, s, window_size=21):
         s_ma = self.moving_average(s, 5)
-        d = np.diff(s_ma)
-        d_abs = np.abs(d)
-        d_abs2 = d_abs ** 2
-        peaks_indices, _ = ss.find_peaks(d_abs2, height=5000, distance=66)
+        diff_abs2 = np.abs(np.diff(s_ma))**2
+        peaks_indices, _ = ss.find_peaks(diff_abs2, height=5000, distance=66)
 
         maximized_peaks_indices = []
         mid = window_size // 2
         for i in peaks_indices:
-            windowed_s = s_filtered[i - mid:i + mid + 1]
-            max_ind = np.argmax(np.array(windowed_s))
-            new_peak_index = max_ind - mid
-            maximized_peaks_indices.append(i + new_peak_index)
+            window_start_index = max(0, i - mid)  # handle edge case of the peak found at the beginning of the signal
+            window_end_index = min(len(s), i + mid + 1)  # handle edge case of the peak found at the end of the signal
+            windowed_s = s[window_start_index:window_end_index]
+            argmax_index = np.argmax(np.array(windowed_s))
+            new_peak_index = window_start_index + argmax_index
+            maximized_peaks_indices.append(new_peak_index)
         return np.array(maximized_peaks_indices)
 
     def find_hr_from_peaks_indices(self, peaks_indices):
@@ -162,7 +162,7 @@ def plot_all_filters_characteristics(sp):
     plt.show()
 
 
-if __name__ == '__main__':
+def main():
     filename = r'..\data\2023-02-11_042812_Tomasz_5min.txt'
     # filename = r'..\data\2023-02-11_050300_Zuzanna_10min.txt'
 
@@ -174,6 +174,7 @@ if __name__ == '__main__':
     # s = s[360*Fs:400*Fs]
     # s = s[3*60*Fs:(3*60+5)*Fs]
     # s = s[53500:56500]
+    s = s[150*Fs:160*Fs]
 
     s_filtered = []
     for x in s:
@@ -211,4 +212,5 @@ if __name__ == '__main__':
     plt.show()
 
 
-
+if __name__ == '__main__':
+    main()
