@@ -49,7 +49,8 @@ class SignalProcessor:
         data_point = self.filter_in_real_time(data_point, FilterType.lowpass)
         return data_point
 
-    def moving_average(self, x, w):
+    @staticmethod
+    def moving_average(x, w):
         z = np.zeros(w // 2 - 1)
         ma = np.convolve(x, np.ones(w), 'valid') / w
         con = np.concatenate([z, ma, z])
@@ -95,25 +96,22 @@ class SignalProcessor:
 
         keys = ['bpm', 'ibi', 'sdnn', 'sdsd', 'rmssd', 'pnn20', 'pnn50']
         measures = {}
-        working_data = {}
         for key in keys:
             measures[key] = np.nan
-        working_data['nn20'] = np.nan
-        working_data['nn50'] = np.nan
 
         measures['bpm'] = 60000 / np.mean(rr_list)
         measures['ibi'] = np.mean(rr_list)
         measures['sdnn'] = np.std(rr_list)
         measures['sdsd'] = np.std(rr_diff)
         measures['rmssd'] = np.sqrt(np.mean(rr_sqdiff))
+
         nn20 = rr_diff[np.where(rr_diff > 20.0)]
-        nn50 = rr_diff[np.where(rr_diff > 50.0)]
-        working_data['nn20'] = nn20
-        working_data['nn50'] = nn50
         try:
             measures['pnn20'] = float(len(nn20)) / float(len(rr_diff))
         except:
             measures['pnn20'] = np.nan
+
+        nn50 = rr_diff[np.where(rr_diff > 50.0)]
         try:
             measures['pnn50'] = float(len(nn50)) / float(len(rr_diff))
         except:
@@ -174,7 +172,7 @@ def main():
     # s = s[360*Fs:400*Fs]
     # s = s[3*60*Fs:(3*60+5)*Fs]
     # s = s[53500:56500]
-    s = s[150*Fs:160*Fs]
+    s = s[149*Fs:161*Fs]
 
     s_filtered = []
     for x in s:
@@ -184,7 +182,7 @@ def main():
     peaks_indices = sp.find_R_peaks(s_filtered)
     measures = sp.make_ecg_analysis_on_peaks_indices(peaks_indices)
     for measure, value in measures.items():
-        print(f'{measure}: {value}')
+        print(f'{measure}: {value:.2f}')
 
     # Plots
     x = np.arange(0, len(s))

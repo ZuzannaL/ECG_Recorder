@@ -32,7 +32,6 @@ def read_from_serial_port(port, baudrate):
                 value += x
             else:
                 if value != '':
-                    # yield convert_units_to_volts(int(value), adc_resolution=12, max_voltage=3.3)
                     yield float(value)
                     value = ''
                 else:

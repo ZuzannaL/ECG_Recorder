@@ -20,17 +20,16 @@ def create_default_filename():
 class Configuration:
     baudrate = 38400
     port = None
+    adc_resolution = 12
+    max_voltage = 3.3
     Fs = 200
     data_points_number_in_the_plot = 3*Fs
     data_points_number_in_the_buffer = 10*Fs
     filtering = False
-    adc_resolution = 12
-    max_voltage = 3.3
 
 
 class PortMonitor(QObject):
-
-    image_signal = QtCore.pyqtSignal(float)
+    data_signal = QtCore.pyqtSignal(float)
 
     @QtCore.pyqtSlot()
     def monitor_port(self):
@@ -39,7 +38,7 @@ class PortMonitor(QObject):
                 baudrate = Configuration.baudrate
                 port = Configuration.port
                 for x in read_from_serial_port(port, baudrate):
-                    self.image_signal.emit(x)
+                    self.data_signal.emit(x)
                     if (baudrate, port) != (Configuration.baudrate, Configuration.port):
                         break
             except serial.serialutil.SerialException as e:
@@ -73,7 +72,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.port_monitor = PortMonitor()
         self.thread = QtCore.QThread(self)
-        self.port_monitor.image_signal.connect(self.update_data)
+        self.port_monitor.data_signal.connect(self.update_data)
         self.port_monitor.moveToThread(self.thread)
         self.thread.started.connect(self.port_monitor.monitor_port)
         self.thread.start()
@@ -105,7 +104,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.graphWidget.setBackground('w')
 
-        pen = pg.mkPen(color=(0, 0, 255), width=1) #todo: it gives an error when width!=1 even though the plot looks ok
+        pen = pg.mkPen(color=(0, 0, 255), width=1)
         self.data_line = self.graphWidget.plot(self.x, self.y, pen=pen)
 
     def updatePortsList(self):
@@ -165,35 +164,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.statusbar.showMessage(f'Filtering off', 5000)
             print(f'Filtering off')
 
-    def showHR(self):
-        if len(self.buffer) >= Configuration.data_points_number_in_the_buffer:
-            hr = self.sp.find_hr(self.buffer)
-            if np.isnan(hr):
-                self.ui.lcdNumber_HR.display('---')
-            else:
-                self.ui.lcdNumber_HR.display(hr)
-
-    @staticmethod
-    def create_heart_measures_display_text(measures):
-        keys = ['bpm', 'ibi', 'sdnn', 'sdsd', 'rmssd', 'pnn20', 'pnn50']
-        displayed_measures = {}
-        for key in keys:
-            if not np.isnan(measures[key]):
-                displayed_measures[key] = '{:.2f}'.format(measures[key])
-            else:
-                displayed_measures[key] = '--'
-        displayed_text = f"<html><head/><body><p><span style=\" font-size:9pt;\">Average ECG <br/>measures:<br/>hr: {displayed_measures['bpm']}<br/>ibi: {displayed_measures['ibi']}<br/>sdnn: {displayed_measures['sdnn']}<br/>sdsd: {displayed_measures['sdsd']}<br/>rmssd: {displayed_measures['rmssd']}<br/>pnn20: {displayed_measures['pnn20']}<br/>pnn50: {displayed_measures['pnn50']}<br/></span></p></body></html>"
-        return displayed_text
-
-
-    def showECGAnalysis(self):
-        if len(self.neverending_buffer) >= Configuration.data_points_number_in_the_buffer:
-            measures = self.sp.make_ecg_analysis(np.array(self.neverending_buffer))
-            if measures is None:
-                return
-            displayed_text = self.create_heart_measures_display_text(measures)
-            self.ui.label_ecg_measures.setText(displayed_text)
-
     def open_file(self):
         if self.file is None:
             if self.user_filename is None or self.user_filename == '':
@@ -216,33 +186,65 @@ class MainWindow(QtWidgets.QMainWindow):
         - data points taken to buffers for analysis are always filtered
         - data points written to file are always raw
         - data displayed in the plot depends on the Configuration.filtering parameter'''
-
         filtered_data_point = self.sp.use_all_filters(data_point)
+        self.update_HR(filtered_data_point)
+        self.update_ECG_analysis(filtered_data_point)
+        if Configuration.filtering:
+            self.update_plot(filtered_data_point)
+        else:
+            self.update_plot(data_point)
+        if self.file is not None:
+            write_data_point_to_file(data_point, self.file)
 
+    def update_HR(self, x):
         if len(self.buffer) == Configuration.data_points_number_in_the_buffer:
             self.buffer = self.buffer[1:]
-        self.buffer.append(filtered_data_point)
-        if self.x[-1] % (1*Configuration.Fs) == 0:
+        self.buffer.append(x)
+        if self.x[-1] % (1 * Configuration.Fs) == 0:
             self.showHR()
 
-        self.neverending_buffer.append(filtered_data_point)
-        if self.x[-1] % (10*Configuration.Fs) == 0:
+    def update_ECG_analysis(self, x):
+        self.neverending_buffer.append(x)
+        if self.x[-1] % (10 * Configuration.Fs) == 0:
             self.showECGAnalysis()
 
+    def update_plot(self, y):
         if len(self.x) == Configuration.data_points_number_in_the_plot:
             self.x = self.x[1:]  # Remove the first x element
             self.y = self.y[1:]  # Remove the first y element
         self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last - x-axis in numbers of samples
-        if Configuration.filtering:  # Add a new value depended on the configuration
-            self.y.append(filtered_data_point)
-        else:
-            self.y.append(data_point)
+        self.y.append(y) # Add a new value depended on the configuration
         x_in_seconds = np.array(self.x)/Configuration.Fs
         y_in_V = convert_units_to_volts(np.array(self.y), Configuration.adc_resolution, Configuration.max_voltage)
-        self.data_line.setData(x_in_seconds, y_in_V)  # Update the data
+        self.data_line.setData(x_in_seconds, y_in_V)  # Update the plot
 
-        if self.file is not None:
-            write_data_point_to_file(data_point, self.file)
+    def showHR(self):
+        if len(self.buffer) >= Configuration.data_points_number_in_the_buffer:
+            hr = self.sp.find_hr(self.buffer)
+            if np.isnan(hr):
+                self.ui.lcdNumber_HR.display('---')
+            else:
+                self.ui.lcdNumber_HR.display(hr)
+
+    def showECGAnalysis(self):
+        if len(self.neverending_buffer) >= Configuration.data_points_number_in_the_buffer:
+            measures = self.sp.make_ecg_analysis(np.array(self.neverending_buffer))
+            if measures is None:
+                return
+            displayed_text = self.create_heart_measures_display_text(measures)
+            self.ui.label_ecg_measures.setText(displayed_text)
+
+    @staticmethod
+    def create_heart_measures_display_text(measures):
+        keys = ['bpm', 'ibi', 'sdnn', 'sdsd', 'rmssd', 'pnn20', 'pnn50']
+        displayed_measures = {}
+        for key in keys:
+            if not np.isnan(measures[key]):
+                displayed_measures[key] = '{:.2f}'.format(measures[key])
+            else:
+                displayed_measures[key] = '--'
+        displayed_text = f"<html><head/><body><p><span style=\" font-size:9pt;\">Average ECG <br/>measures:<br/>hr: {displayed_measures['bpm']}<br/>ibi: {displayed_measures['ibi']}<br/>sdnn: {displayed_measures['sdnn']}<br/>sdsd: {displayed_measures['sdsd']}<br/>rmssd: {displayed_measures['rmssd']}<br/>pnn20: {displayed_measures['pnn20']}<br/>pnn50: {displayed_measures['pnn50']}<br/></span></p></body></html>"
+        return displayed_text
 
 
 def run():
@@ -253,4 +255,4 @@ def run():
 
 
 if __name__ == "__main__":
-	run()
+    run()
