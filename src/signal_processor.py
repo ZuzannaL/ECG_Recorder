@@ -64,8 +64,12 @@ class SignalProcessor:
         maximized_peaks_indices = []
         mid = window_size // 2
         for i in peaks_indices:
-            window_start_index = max(0, i - mid)  # handle edge case of the peak found at the beginning of the signal
-            window_end_index = min(len(s), i + mid + 1)  # handle edge case of the peak found at the end of the signal
+            # handle edge case of the peak found
+            # at the beginning of the signal
+            window_start_index = max(0, i - mid)
+            # handle edge case of the peak found
+            # at the end of the signal
+            window_end_index = min(len(s), i + mid + 1)
             windowed_s = s[window_start_index:window_end_index]
             argmax_index = np.argmax(np.array(windowed_s))
             new_peak_index = window_start_index + argmax_index

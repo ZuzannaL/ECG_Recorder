@@ -185,7 +185,8 @@ class MainWindow(QtWidgets.QMainWindow):
         '''Method for updating data, takes in one value:
         - data points taken to buffers for analysis are always filtered
         - data points written to file are always raw
-        - data displayed in the plot depends on the Configuration.filtering parameter'''
+        - data displayed in the plot depends on the
+        Configuration.filtering parameter'''
         filtered_data_point = self.sp.use_all_filters(data_point)
         self.update_HR(filtered_data_point)
         self.update_ECG_analysis(filtered_data_point)
@@ -212,7 +213,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if len(self.x) == Configuration.data_points_number_in_the_plot:
             self.x = self.x[1:]  # Remove the first x element
             self.y = self.y[1:]  # Remove the first y element
-        self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last - x-axis in numbers of samples
+        self.x.append(self.x[-1] + 1)  # Add a new value 1 higher than the last - x-axis in numbers
+        # of samples
         self.y.append(y) # Add a new value depended on the configuration
         x_in_seconds = np.array(self.x)/Configuration.Fs
         y_in_V = convert_units_to_volts(np.array(self.y), Configuration.adc_resolution, Configuration.max_voltage)
