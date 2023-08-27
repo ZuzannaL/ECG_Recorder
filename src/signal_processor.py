@@ -165,17 +165,14 @@ def plot_all_filters_characteristics(sp):
 
 
 def main():
-    filename = r'..\data\2023-02-11_042812_Tomasz_5min.txt'
-    # filename = r'..\data\2023-02-11_050300_Zuzanna_10min.txt'
+    filename = r'..\data\example_ecg_data1.txt'
+    # filename = r'..\data\example_ecg_data2.txt'
 
     s = read_from_file(filename)
     Fs = 200
     sp = SignalProcessor(Fs)
     # plot_all_filters_characteristics(sp)
 
-    # s = s[360*Fs:400*Fs]
-    # s = s[3*60*Fs:(3*60+5)*Fs]
-    # s = s[53500:56500]
     s = s[149*Fs:161*Fs]
 
     s_filtered = []
