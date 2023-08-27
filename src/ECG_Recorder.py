@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QObject
 import pyqtgraph as pg
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -13,8 +14,10 @@ from gui.ECG_Recorder_ui import Ui_MainWindow
 
 
 def create_default_filename():
-    _data_folder = Path('../data/')
-    return _data_folder/f'{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
+    this_file_path = os.path.realpath(__file__)
+    folder_name = os.path.dirname(this_file_path)
+    data_folder = Path(os.path.join(folder_name, '../data/'))
+    return data_folder/f'{datetime.now().strftime("%Y-%m-%d_%H%M%S")}.txt'
 
 
 class Configuration:
